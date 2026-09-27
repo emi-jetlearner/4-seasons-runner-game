@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Atmospheric 3D Parallax Moving Background for Endless Running Game in HTML5, CSS, and JavaScript. Autumn foggy forest vibes.">
-  <title>Autumn Endless Runner - Moving Parallax Background</title>
+  <title>Autumn Forest Run</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,96 +12,38 @@
     <!-- Main Game Canvas -->
     <canvas id="game-canvas"></canvas>
 
-    <!-- Top Left Title Badge -->
+    <!-- Top Left Pause Button -->
     <header class="top-header">
-      <div class="title-badge">
-        <span class="leaf-icon">🍁</span>
-        <div class="title-text">
-          <h1>Autumn Forest Run</h1>
-          <p>Foggy Parallax Background Engine</p>
-        </div>
-      </div>
+      <button id="btn-pause" class="btn btn-icon" title="Pause Game">
+        <span>⏸</span>
+      </button>
+      <div class="level-title">Autumn Forest Run</div>
     </header>
 
-    <!-- Top Right Integration Info Button -->
-    <div class="info-badge">
-      <button id="btn-info" class="btn" title="How to use in your game">
-        <span>📖</span> Integration Guide
-      </button>
+    <!-- Top Right Score Panel -->
+    <div class="score-panel">
+      <div class="score-item">
+        <span class="label">HIGH SCORE</span>
+        <span id="high-score" class="value">0</span>
+      </div>
+      <div class="divider-vertical"></div>
+      <div class="score-item">
+        <span class="label">SCORE</span>
+        <span id="current-score" class="value">0</span>
+      </div>
     </div>
 
-    <!-- Code Integration Drawer -->
-    <aside id="code-card" class="code-info-card" aria-label="Game Integration Guide">
-      <h2>🌲 Endless Runner Integration</h2>
-      <p>This parallax background is designed to seamlessly integrate into any HTML5/JS endless runner loop:</p>
-      
-      <pre><code>// 1. Initialize in your game
-const bg = new AutumnParallaxBackground(canvas);
-
-// 2. In your game loop:
-function loop(timestamp) {
-  const dt = (timestamp - lastTime) / 1000;
-  
-  // Update background movement
-  bg.update(dt);
-  
-  // Draw background first
-  bg.draw();
-  
-  // Draw your runner character & obstacles
-  player.draw(ctx);
-  obstacles.draw(ctx);
-  
-  requestAnimationFrame(loop);
-}</code></pre>
-
-      <p style="margin-top: 10px;">
-        💡 <strong>Tip:</strong> Call <code>bg.setSpeed(newSpeed)</code> as the game speeds up over time! You can also use <code>bg.getGroundY(player.x)</code> to accurately align your character onto the path.
-      </p>
-    </aside>
-
-    <!-- Floating Speed Indicator -->
-    <div class="speed-pill">Depth Parallax Active</div>
-
-    <!-- Bottom Controls HUD -->
-    <nav class="controls-card" aria-label="Background Controls">
-      <!-- Pause / Resume -->
-      <button id="btn-pause" class="btn">
-        <span>⏸</span> Pause
-      </button>
-
-      <div class="divider"></div>
-
-      <!-- Speed Control -->
-      <div class="control-group">
-        <label for="speed-slider">Speed:</label>
-        <div class="slider-wrapper">
-          <input type="range" id="speed-slider" min="0.1" max="3.0" step="0.1" value="1.0">
-          <span id="speed-value" class="speed-value">1.0x</span>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Toggle Leaves Particles -->
-      <button id="btn-leaves" class="btn active" title="Toggle floating autumn leaves">
-        <span>🍂</span> Leaves
-      </button>
-
-      <!-- Toggle Fog Layers -->
-      <button id="btn-fog" class="btn active" title="Toggle drifting fog mist">
-        <span>🌫️</span> Fog
-      </button>
-
-      <!-- Toggle Runner Silhouette Preview -->
-      <button id="btn-runner" class="btn" title="Show running character silhouette">
-        <span>🏃</span> Runner Demo
-      </button>
-    </nav>
+    <!-- Game Over / Victory Overlay -->
+    <div id="game-overlay" class="overlay hidden">
+      <h1 id="overlay-title">Level Complete!</h1>
+      <p id="overlay-message">You reached 500 points.</p>
+      <button id="btn-restart" class="btn btn-large">Play Again</button>
+    </div>
   </div>
 
   <!-- Scripts -->
   <script src="background.js"></script>
+  <script src="game.js"></script>
   <script src="main.js"></script>
 </body>
 </html>

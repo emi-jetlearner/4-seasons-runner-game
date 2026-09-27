@@ -18,12 +18,11 @@ class AutumnParallaxBackground {
     this.ctx = canvas ? canvas.getContext('2d') : null;
     
     // Core motion states
-    this.baseSpeed = 160; // Pixels per second at 1.0x speed
+    this.baseSpeed = 320; // Pixels per second at 1.0x speed
     this.speedMultiplier = 1.0;
     this.isPaused = false;
     this.showLeaves = true;
     this.showFog = true;
-    this.showRunnerPreview = false;
 
     // Viewport dimensions (logical screen units)
     this.width = logicalWidth || (canvas ? (canvas.clientWidth || canvas.width) : window.innerWidth);
@@ -42,9 +41,6 @@ class AutumnParallaxBackground {
     this.fogOffset1 = 0;
     this.fogOffset2 = 0;
     this.fogOffset3 = 0;
-
-    // Runner preview state (optional demo of runner silhouette)
-    this.runnerAnimTime = 0;
     
     // Initialize graphics
     this.initLayers();
@@ -451,11 +447,6 @@ class AutumnParallaxBackground {
         }
       }
     }
-
-    // Runner preview animation timer
-    if (this.showRunnerPreview) {
-      this.runnerAnimTime += deltaTime * 12 * Math.max(0.4, this.speedMultiplier);
-    }
   }
 
   /**
@@ -508,11 +499,6 @@ class AutumnParallaxBackground {
     // 11. Dynamic Falling Autumn Leaves
     if (this.showLeaves) {
       this.drawLeaves(ctx);
-    }
-
-    // 12. Runner Preview Silhouette (Optional demo mode)
-    if (this.showRunnerPreview) {
-      this.drawRunnerPreview(ctx);
     }
   }
 
@@ -629,72 +615,6 @@ class AutumnParallaxBackground {
     ctx.restore();
   }
 
-  /**
-   * Optional Runner Preview: Draws a sleek stylized silhouette character running along the ground
-   * Helps developers immediately visualize collision height and movement dynamics
-   */
-  drawRunnerPreview(ctx) {
-    const runnerX = Math.min(200, this.width * 0.2);
-    const groundY = this.height * 0.82;
-    const t = this.runnerAnimTime;
-
-    // Running bounce
-    const bounce = Math.abs(Math.sin(t)) * 8;
-    const runnerY = groundY - bounce;
-
-    ctx.save();
-    ctx.fillStyle = '#260a03'; // Deep silhouette matching foreground palette
-    ctx.strokeStyle = '#260a03';
-    ctx.lineWidth = 3.5;
-    ctx.lineCap = 'round';
-
-    // Head
-    ctx.beginPath();
-    ctx.arc(runnerX, runnerY - 38, 7, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Torso (leaning forward into the autumn run)
-    ctx.beginPath();
-    ctx.moveTo(runnerX, runnerY - 31);
-    ctx.lineTo(runnerX - 3, runnerY - 14);
-    ctx.stroke();
-
-    // Arms in running motion
-    const armSwing = Math.sin(t) * 14;
-    ctx.beginPath();
-    // Back arm
-    ctx.moveTo(runnerX - 1, runnerY - 26);
-    ctx.lineTo(runnerX - 1 - armSwing, runnerY - 16);
-    // Front arm
-    ctx.moveTo(runnerX - 1, runnerY - 26);
-    ctx.lineTo(runnerX - 1 + armSwing, runnerY - 16);
-    ctx.stroke();
-
-    // Legs in running stride
-    const legSwing = Math.sin(t) * 16;
-    ctx.beginPath();
-    // Left leg
-    ctx.moveTo(runnerX - 3, runnerY - 14);
-    ctx.lineTo(runnerX - 3 + legSwing, runnerY - 6);
-    ctx.lineTo(runnerX - 1 + legSwing * 1.2, runnerY);
-    // Right leg
-    ctx.moveTo(runnerX - 3, runnerY - 14);
-    ctx.lineTo(runnerX - 3 - legSwing, runnerY - 6);
-    ctx.lineTo(runnerX - 1 - legSwing * 1.2, runnerY);
-    ctx.stroke();
-
-    // Dynamic wind scarf fluttering behind runner
-    ctx.fillStyle = '#ff8c42';
-    ctx.beginPath();
-    ctx.moveTo(runnerX - 3, runnerY - 29);
-    ctx.quadraticCurveTo(runnerX - 16, runnerY - 32 + Math.sin(t * 1.5) * 4, runnerX - 28, runnerY - 28 + Math.cos(t * 2) * 5);
-    ctx.lineTo(runnerX - 26, runnerY - 24 + Math.cos(t * 2) * 5);
-    ctx.quadraticCurveTo(runnerX - 14, runnerY - 27, runnerX - 3, runnerY - 26);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-  }
 
   /* ----------------------------------------------------
    * API & CONTROL METHODS
@@ -717,11 +637,6 @@ class AutumnParallaxBackground {
   toggleFog() {
     this.showFog = !this.showFog;
     return this.showFog;
-  }
-
-  toggleRunnerPreview() {
-    this.showRunnerPreview = !this.showRunnerPreview;
-    return this.showRunnerPreview;
   }
 
   /**
@@ -771,7 +686,494 @@ class ParallaxLayer {
   }
 }
 
+class WinterParallaxBackground {
+  constructor(canvas, logicalWidth, logicalHeight) {
+    this.canvas = canvas;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
+    this.baseSpeed = 320;
+    this.speedMultiplier = 1.0;
+    this.isPaused = false;
+    this.showLeaves = true;
+    this.width = logicalWidth || (canvas ? (canvas.clientWidth || canvas.width) : window.innerWidth);
+    this.height = logicalHeight || (canvas ? (canvas.clientHeight || canvas.height) : window.innerHeight);
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1920, Math.floor(this.width * 1.25));
+    this.layers = [];
+    this.leaves = [];
+    this.leafCount = 120;
+    this.initLayers();
+    this.initLeaves();
+  }
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1600, Math.floor(this.width * 1.25));
+    this.initLayers();
+  }
+  initLayers() {
+    this.layers = [
+      new ParallaxLayer({ speedRatio: 0.06, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderDistantMountains(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.16, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderFarTreeLine(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.36, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderMidForest(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.68, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderNearForest(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 1.0, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderForegroundGround(ctx, w, h) })
+    ];
+  }
+  renderDistantMountains(ctx, w, h) {
+    const horizon = h * 0.72;
+    ctx.fillStyle = 'rgba(160, 180, 200, 0.5)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, horizon - 120);
+    const peaks = [ { x: w * 0.15, y: horizon - 170 }, { x: w * 0.32, y: horizon - 110 }, { x: w * 0.48, y: horizon - 190 }, { x: w * 0.68, y: horizon - 130 }, { x: w * 0.85, y: horizon - 180 }, { x: w * 1.00, y: horizon - 120 } ];
+    let prevX = 0, prevY = horizon - 120;
+    for (const p of peaks) {
+      const midX = (prevX + p.x) / 2;
+      ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + p.y) / 2);
+      prevX = p.x; prevY = p.y;
+    }
+    ctx.lineTo(w, prevY); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    const fogGrad = ctx.createLinearGradient(0, horizon - 200, 0, h);
+    fogGrad.addColorStop(0, 'rgba(230, 240, 255, 0)');
+    fogGrad.addColorStop(1, 'rgba(180, 200, 220, 0.8)');
+    ctx.fillStyle = fogGrad; ctx.fillRect(0, horizon - 200, w, h - (horizon - 200));
+  }
+  renderFarTreeLine(ctx, w, h) {
+    const baseY = h * 0.76;
+    ctx.fillStyle = 'rgba(120, 140, 160, 0.6)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY - 40);
+    const step = 60, count = Math.ceil(w / step);
+    for (let i = 0; i <= count; i++) {
+      const curX = i * step;
+      const targetY = baseY - 40 - (30 + ((i * 37) % 20));
+      ctx.lineTo(curX, targetY);
+      if (i % 2 === 0) ctx.lineTo(curX + step * 0.5, targetY - 20);
+    }
+    ctx.lineTo(w, baseY - 40); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderMidForest(ctx, w, h) {
+    const baseY = h * 0.78;
+    ctx.fillStyle = 'rgba(90, 110, 130, 0.8)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY);
+    const numTrees = Math.floor(w / 70), treeSpacing = w / numTrees;
+    for (let i = 0; i <= numTrees; i++) {
+      const x = i * treeSpacing;
+      const hillY = baseY + Math.sin((i / numTrees) * Math.PI * 6) * 18;
+      ctx.lineTo(x, hillY);
+      const treeH = 65 + ((i * 47) % 35);
+      ctx.fillRect(x - 2, hillY - treeH, 4, treeH);
+      ctx.beginPath();
+      ctx.moveTo(x - 20, hillY - treeH * 0.2);
+      ctx.lineTo(x, hillY - treeH - 20);
+      ctx.lineTo(x + 20, hillY - treeH * 0.2);
+      ctx.fill();
+    }
+    ctx.lineTo(w, baseY); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderNearForest(ctx, w, h) {
+    const baseY = h * 0.81;
+    ctx.fillStyle = '#2c3e50';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY);
+    const hillPoints = 12;
+    for (let i = 0; i <= hillPoints; i++) ctx.lineTo((i / hillPoints) * w, baseY + Math.sin((i / hillPoints) * Math.PI * 4) * 12);
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    const treeCount = Math.floor(w / 140), spacing = w / treeCount;
+    for (let i = 0; i < treeCount; i++) {
+      const x = i * spacing + ((i * 31) % 40);
+      const hillY = baseY + Math.sin((x / w) * Math.PI * 4) * 12;
+      const height = 110 + ((i * 53) % 45);
+      ctx.beginPath(); ctx.moveTo(x - 4, hillY); ctx.lineTo(x - 1.5, hillY - height);
+      ctx.lineTo(x + 1.5, hillY - height); ctx.lineTo(x + 4, hillY); ctx.fill();
+      ctx.lineWidth = 2.5; ctx.strokeStyle = '#2c3e50';
+      ctx.beginPath();
+      ctx.moveTo(x, hillY - height * 0.6); ctx.lineTo(x - 20, hillY - height * 0.8);
+      ctx.moveTo(x, hillY - height * 0.7); ctx.lineTo(x + 25, hillY - height * 0.9);
+      ctx.stroke();
+    }
+  }
+  renderForegroundGround(ctx, w, h) {
+    const groundY = h * 0.82;
+    ctx.fillStyle = '#e0eaf5';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, groundY);
+    const segments = 24;
+    for (let i = 0; i <= segments; i++) ctx.lineTo((i / segments) * w, groundY + Math.sin((i / segments) * Math.PI * 2) * 5);
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const x = (i / segments) * w, y = groundY + Math.sin((i / segments) * Math.PI * 2) * 5;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  initLeaves() {
+    this.leaves = [];
+    for (let i = 0; i < this.leafCount; i++) {
+      this.leaves.push({
+        x: Math.random() * this.width, y: Math.random() * this.height,
+        size: 2 + Math.random() * 4,
+        speedX: - (10 + Math.random() * 30), speedY: 40 + Math.random() * 50,
+        oscillationSpeed: 1 + Math.random() * 2, oscillationAmplitude: 10 + Math.random() * 20,
+        phase: Math.random() * Math.PI * 2, depth: 0.5 + Math.random() * 0.8
+      });
+    }
+  }
+  update(deltaTime) {
+    if (this.isPaused) return;
+    const currentSpeed = this.baseSpeed * this.speedMultiplier;
+    for (const layer of this.layers) layer.update(deltaTime, currentSpeed);
+    if (this.showLeaves) {
+      for (const leaf of this.leaves) {
+        leaf.phase += leaf.oscillationSpeed * deltaTime;
+        const driftX = (leaf.speedX - currentSpeed * leaf.depth * 0.6) * deltaTime;
+        const driftY = (leaf.speedY + Math.sin(leaf.phase) * leaf.oscillationAmplitude * 0.4) * deltaTime;
+        leaf.x += driftX; leaf.y += driftY;
+        if (leaf.x < -40) { leaf.x = this.width + 30; leaf.y = -20; }
+        if (leaf.y > this.height + 20) { leaf.y = -20; leaf.x = Math.random() * this.width; }
+      }
+    }
+  }
+  draw(targetCtx) {
+    const ctx = targetCtx || this.ctx;
+    if (!ctx) return;
+    const w = this.width, h = this.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrad.addColorStop(0, '#dbe9f4'); skyGrad.addColorStop(0.5, '#b9d3e8'); skyGrad.addColorStop(1, '#8ca8c4');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.beginPath(); ctx.arc(w * 0.72, h * 0.42, 30, 0, Math.PI * 2); ctx.fill();
+
+    this.layers[0].draw(ctx, w);
+    this.layers[1].draw(ctx, w);
+    this.layers[2].draw(ctx, w);
+    this.layers[3].draw(ctx, w);
+    this.layers[4].draw(ctx, w);
+
+    if (this.showLeaves) {
+      ctx.fillStyle = 'white';
+      for (const leaf of this.leaves) {
+        ctx.beginPath(); ctx.arc(leaf.x, leaf.y, leaf.size * leaf.depth, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  setSpeed(multiplier) { this.speedMultiplier = Math.max(0, Math.min(4.0, multiplier)); }
+  togglePause() { this.isPaused = !this.isPaused; return this.isPaused; }
+  getGroundY(x = 0) { return this.height * 0.82 + Math.sin((x / this.chunkWidth) * Math.PI * 2) * 5; }
+}
+
+class SpringParallaxBackground {
+  constructor(canvas, logicalWidth, logicalHeight) {
+    this.canvas = canvas;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
+    this.baseSpeed = 320;
+    this.speedMultiplier = 1.0;
+    this.isPaused = false;
+    this.showLeaves = true;
+    this.width = logicalWidth || (canvas ? (canvas.clientWidth || canvas.width) : window.innerWidth);
+    this.height = logicalHeight || (canvas ? (canvas.clientHeight || canvas.height) : window.innerHeight);
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1920, Math.floor(this.width * 1.25));
+    this.layers = [];
+    this.leaves = [];
+    this.leafCount = 80;
+    this.initLayers();
+    this.initLeaves();
+  }
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1600, Math.floor(this.width * 1.25));
+    this.initLayers();
+  }
+  initLayers() {
+    this.layers = [
+      new ParallaxLayer({ speedRatio: 0.06, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderDistantMountains(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.16, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderFarTreeLine(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.36, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderMidForest(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.68, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderNearForest(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 1.0, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderForegroundGround(ctx, w, h) })
+    ];
+  }
+  renderDistantMountains(ctx, w, h) {
+    const horizon = h * 0.72;
+    ctx.fillStyle = 'rgba(210, 160, 180, 0.5)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, horizon - 120);
+    const peaks = [ { x: w * 0.15, y: horizon - 170 }, { x: w * 0.32, y: horizon - 110 }, { x: w * 0.48, y: horizon - 190 }, { x: w * 0.68, y: horizon - 130 }, { x: w * 0.85, y: horizon - 180 }, { x: w * 1.00, y: horizon - 120 } ];
+    let prevX = 0, prevY = horizon - 120;
+    for (const p of peaks) {
+      const midX = (prevX + p.x) / 2;
+      ctx.quadraticCurveTo(prevX, prevY, midX, (prevY + p.y) / 2);
+      prevX = p.x; prevY = p.y;
+    }
+    ctx.lineTo(w, prevY); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    const fogGrad = ctx.createLinearGradient(0, horizon - 200, 0, h);
+    fogGrad.addColorStop(0, 'rgba(255, 230, 240, 0)');
+    fogGrad.addColorStop(1, 'rgba(240, 180, 200, 0.8)');
+    ctx.fillStyle = fogGrad; ctx.fillRect(0, horizon - 200, w, h - (horizon - 200));
+  }
+  renderFarTreeLine(ctx, w, h) {
+    const baseY = h * 0.76;
+    ctx.fillStyle = 'rgba(160, 200, 160, 0.6)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY - 40);
+    const step = 60, count = Math.ceil(w / step);
+    for (let i = 0; i <= count; i++) {
+      const curX = i * step;
+      const targetY = baseY - 40 - (30 + ((i * 37) % 20));
+      ctx.lineTo(curX, targetY);
+      if (i % 2 === 0) ctx.lineTo(curX + step * 0.5, targetY - 20);
+    }
+    ctx.lineTo(w, baseY - 40); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderMidForest(ctx, w, h) {
+    const baseY = h * 0.78;
+    ctx.fillStyle = 'rgba(120, 180, 120, 0.8)';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY);
+    const numTrees = Math.floor(w / 70), treeSpacing = w / numTrees;
+    for (let i = 0; i <= numTrees; i++) {
+      const x = i * treeSpacing;
+      const hillY = baseY + Math.sin((i / numTrees) * Math.PI * 6) * 18;
+      ctx.lineTo(x, hillY);
+      const treeH = 65 + ((i * 47) % 35);
+      ctx.fillRect(x - 2, hillY - treeH, 4, treeH);
+      ctx.beginPath();
+      ctx.arc(x, hillY - treeH, 24, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.lineTo(w, baseY); ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderNearForest(ctx, w, h) {
+    const baseY = h * 0.81;
+    ctx.fillStyle = '#4a3b32';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, baseY);
+    const hillPoints = 12;
+    for (let i = 0; i <= hillPoints; i++) ctx.lineTo((i / hillPoints) * w, baseY + Math.sin((i / hillPoints) * Math.PI * 4) * 12);
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    const treeCount = Math.floor(w / 140), spacing = w / treeCount;
+    for (let i = 0; i < treeCount; i++) {
+      const x = i * spacing + ((i * 31) % 40);
+      const hillY = baseY + Math.sin((x / w) * Math.PI * 4) * 12;
+      const height = 110 + ((i * 53) % 45);
+      ctx.beginPath(); ctx.moveTo(x - 4, hillY); ctx.lineTo(x - 1.5, hillY - height);
+      ctx.lineTo(x + 1.5, hillY - height); ctx.lineTo(x + 4, hillY); ctx.fill();
+      ctx.fillStyle = 'rgba(255, 183, 197, 0.9)';
+      ctx.beginPath();
+      ctx.arc(x, hillY - height, 35, 0, Math.PI * 2);
+      ctx.arc(x - 20, hillY - height + 10, 25, 0, Math.PI * 2);
+      ctx.arc(x + 20, hillY - height + 10, 25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#4a3b32';
+    }
+  }
+  renderForegroundGround(ctx, w, h) {
+    const groundY = h * 0.82;
+    ctx.fillStyle = '#7bc04b';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, groundY);
+    const segments = 24;
+    for (let i = 0; i <= segments; i++) ctx.lineTo((i / segments) * w, groundY + Math.sin((i / segments) * Math.PI * 2) * 5);
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#a4e575';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const x = (i / segments) * w, y = groundY + Math.sin((i / segments) * Math.PI * 2) * 5;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  initLeaves() {
+    this.leaves = [];
+    for (let i = 0; i < this.leafCount; i++) {
+      this.leaves.push({
+        x: Math.random() * this.width, y: Math.random() * this.height,
+        size: 2 + Math.random() * 3,
+        speedX: - (30 + Math.random() * 30), speedY: 30 + Math.random() * 50,
+        oscillationSpeed: 2 + Math.random() * 2, oscillationAmplitude: 5 + Math.random() * 15,
+        phase: Math.random() * Math.PI * 2, depth: 0.5 + Math.random() * 0.8
+      });
+    }
+  }
+  update(deltaTime) {
+    if (this.isPaused) return;
+    const currentSpeed = this.baseSpeed * this.speedMultiplier;
+    for (const layer of this.layers) layer.update(deltaTime, currentSpeed);
+    if (this.showLeaves) {
+      for (const leaf of this.leaves) {
+        leaf.phase += leaf.oscillationSpeed * deltaTime;
+        const driftX = (leaf.speedX - currentSpeed * leaf.depth * 0.6) * deltaTime;
+        const driftY = (leaf.speedY + Math.sin(leaf.phase) * leaf.oscillationAmplitude * 0.4) * deltaTime;
+        leaf.x += driftX; leaf.y += driftY;
+        if (leaf.x < -40) { 
+          leaf.x = this.width + 30; 
+          leaf.y = Math.random() * this.height; 
+        }
+        if (leaf.y > this.height + 20) { 
+          // 50% chance to spawn way up high, 50% chance to spawn at tree level (mid-to-low screen)
+          leaf.y = Math.random() > 0.5 ? -20 : this.height * 0.5 + Math.random() * (this.height * 0.25); 
+          leaf.x = Math.random() * this.width; 
+        }
+      }
+    }
+  }
+  draw(targetCtx) {
+    const ctx = targetCtx || this.ctx;
+    if (!ctx) return;
+    const w = this.width, h = this.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+    skyGrad.addColorStop(0, '#e8f0fe'); skyGrad.addColorStop(0.5, '#cce0ff'); skyGrad.addColorStop(1, '#ffebf0');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
+    
+    ctx.fillStyle = 'rgba(255, 255, 220, 0.8)';
+    ctx.beginPath(); ctx.arc(w * 0.72, h * 0.42, 30, 0, Math.PI * 2); ctx.fill();
+
+    this.layers[0].draw(ctx, w);
+    this.layers[1].draw(ctx, w);
+    this.layers[2].draw(ctx, w);
+    this.layers[3].draw(ctx, w);
+    this.layers[4].draw(ctx, w);
+
+    if (this.showLeaves) {
+      ctx.fillStyle = '#ffb7c5';
+      for (const leaf of this.leaves) {
+        ctx.beginPath(); ctx.arc(leaf.x, leaf.y, leaf.size * leaf.depth, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+  setSpeed(multiplier) { this.speedMultiplier = Math.max(0, Math.min(4.0, multiplier)); }
+  togglePause() { this.isPaused = !this.isPaused; return this.isPaused; }
+  getGroundY(x = 0) { return this.height * 0.82 + Math.sin((x / this.chunkWidth) * Math.PI * 2) * 5; }
+}
+
+class SummerParallaxBackground {
+  constructor(canvas, logicalWidth, logicalHeight) {
+    this.canvas = canvas;
+    this.ctx = canvas ? canvas.getContext('2d') : null;
+    this.baseSpeed = 320;
+    this.speedMultiplier = 1.0;
+    this.isPaused = false;
+    this.width = logicalWidth || (canvas ? (canvas.clientWidth || canvas.width) : window.innerWidth);
+    this.height = logicalHeight || (canvas ? (canvas.clientHeight || canvas.height) : window.innerHeight);
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1920, Math.floor(this.width * 1.25));
+    this.layers = [];
+    this.initLayers();
+  }
+  resize(width, height) {
+    this.width = width;
+    this.height = height;
+    this.groundY = this.height * 0.82;
+    this.chunkWidth = Math.max(1600, Math.floor(this.width * 1.25));
+    this.initLayers();
+  }
+  initLayers() {
+    this.layers = [
+      new ParallaxLayer({ speedRatio: 0.05, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderSkyClouds(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.15, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderDistantIslands(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.35, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderOcean(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 0.65, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderWaves(ctx, w, h) }),
+      new ParallaxLayer({ speedRatio: 1.0, width: this.chunkWidth, height: this.height, renderFn: (ctx, w, h) => this.renderBeach(ctx, w, h) })
+    ];
+  }
+  renderSkyClouds(ctx, w, h) {
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    const numClouds = 5;
+    for (let i = 0; i < numClouds; i++) {
+        let x = (i / numClouds) * w + 100;
+        let y = h * 0.2 + ((i * 37) % 50);
+        ctx.beginPath();
+        ctx.arc(x, y, 40, 0, Math.PI * 2);
+        ctx.arc(x + 30, y - 20, 50, 0, Math.PI * 2);
+        ctx.arc(x + 60, y, 40, 0, Math.PI * 2);
+        ctx.fill();
+    }
+  }
+  renderDistantIslands(ctx, w, h) {
+    const horizon = h * 0.55;
+    ctx.fillStyle = '#66cc99';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, horizon);
+    for (let i = 0; i < 4; i++) {
+        let cx = w * (0.1 + i*0.3);
+        ctx.quadraticCurveTo(cx - 100, horizon, cx - 50, horizon - 30);
+        ctx.quadraticCurveTo(cx, horizon - 80, cx + 50, horizon - 30);
+        ctx.quadraticCurveTo(cx + 100, horizon, cx + 150, horizon);
+    }
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderOcean(ctx, w, h) {
+    const horizon = h * 0.55;
+    ctx.fillStyle = '#00aaff';
+    ctx.fillRect(0, horizon, w, h - horizon);
+  }
+  renderWaves(ctx, w, h) {
+    const horizon = h * 0.72;
+    ctx.fillStyle = '#80d4ff';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, horizon);
+    const wavePoints = 12;
+    for (let i = 0; i <= wavePoints; i++) {
+        let px = (i / wavePoints) * w;
+        let py = horizon + Math.sin(i * Math.PI) * 15;
+        ctx.lineTo(px, py);
+    }
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+  }
+  renderBeach(ctx, w, h) {
+    const groundY = h * 0.82;
+    ctx.fillStyle = '#ffdf80';
+    ctx.beginPath(); ctx.moveTo(0, h); ctx.lineTo(0, groundY);
+    const segments = 24;
+    for (let i = 0; i <= segments; i++) {
+        let px = (i / segments) * w;
+        let py = groundY + Math.sin((i / segments) * Math.PI * 2) * 5;
+        ctx.lineTo(px, py);
+    }
+    ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#ff9999';
+    for(let i = 0; i < 5; i++) {
+        let x = (i/5)*w + 50;
+        let y = groundY + 20 + ((i*17)%20);
+        ctx.beginPath();
+        for(let j=0; j<5; j++) {
+            ctx.ellipse(x, y, 4, 8, j * (Math.PI*2/5), 0, Math.PI*2);
+        }
+        ctx.fill();
+    }
+  }
+  update(deltaTime) {
+    if (this.isPaused) return;
+    const currentSpeed = this.baseSpeed * this.speedMultiplier;
+    for (const layer of this.layers) layer.update(deltaTime, currentSpeed);
+  }
+  draw(targetCtx) {
+    const ctx = targetCtx || this.ctx;
+    if (!ctx) return;
+    const w = this.width, h = this.height;
+    ctx.clearRect(0, 0, w, h);
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h*0.55);
+    skyGrad.addColorStop(0, '#33bbff'); skyGrad.addColorStop(1, '#ccf2ff');
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#ffcc00';
+    ctx.beginPath(); ctx.arc(w * 0.8, h * 0.2, 50, 0, Math.PI * 2); ctx.fill();
+    this.layers[0].draw(ctx, w);
+    this.layers[1].draw(ctx, w);
+    this.layers[2].draw(ctx, w);
+    this.layers[3].draw(ctx, w);
+    this.layers[4].draw(ctx, w);
+  }
+  setSpeed(multiplier) { this.speedMultiplier = Math.max(0, Math.min(4.0, multiplier)); }
+  togglePause() { this.isPaused = !this.isPaused; return this.isPaused; }
+  getGroundY(x = 0) { return this.height * 0.82 + Math.sin((x / this.chunkWidth) * Math.PI * 2) * 5; }
+}
+
 // Attach to window or export for modules
 if (typeof window !== 'undefined') {
   window.AutumnParallaxBackground = AutumnParallaxBackground;
+  window.WinterParallaxBackground = WinterParallaxBackground;
+  window.SpringParallaxBackground = SpringParallaxBackground;
+  window.SummerParallaxBackground = SummerParallaxBackground;
 }
+
