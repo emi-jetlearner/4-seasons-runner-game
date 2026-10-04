@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Atmospheric 3D Parallax Moving Background for Endless Running Game in HTML5, CSS, and JavaScript. Autumn foggy forest vibes.">
-  <title>Autumn Forest Run</title>
+  <title>Seasons Runner Game</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -43,13 +43,32 @@
 
     <!-- Home Screen Popup -->
     <div id="home-screen" class="home-popup">
+      <button id="btn-how-to-play" class="btn btn-icon home-popup-help" title="How to Play" aria-label="How to Play">?</button>
       <button id="btn-close-popup" class="btn btn-icon home-popup-close" title="Close">✕</button>
-      <h1 id="home-title">Endless season running game</h1>
+      <h1 id="home-title">Seasons Runner Game</h1>
       <div class="level-select">
         <button id="btn-autumn" class="btn btn-large level-btn" data-season="Autumn">Autumn</button>
         <button id="btn-winter" class="btn btn-large level-btn locked" data-season="Winter">Winter</button>
         <button id="btn-spring" class="btn btn-large level-btn locked" data-season="Spring">Spring</button>
         <button id="btn-summer" class="btn btn-large level-btn locked" data-season="Summer">Summer</button>
+      </div>
+      <button id="btn-finish-line" class="btn btn-large" style="display:none; margin-top:18px; background: linear-gradient(135deg,#ff8c00,#ff3399); border-color:#ffaa44; font-size:1.1rem; letter-spacing:1px;">🏁 FINISH LINE</button>
+    </div>
+
+    <!-- How to Play Popup -->
+    <div id="how-to-play-popup" class="home-popup hidden" style="z-index: 70;">
+      <button id="btn-close-how-to-play" class="btn btn-icon home-popup-close" title="Close">✕</button>
+      <h1 id="how-to-title" style="font-size: 2.2rem; font-weight: 700; color: #fff; text-shadow: 0 4px 16px rgba(91, 155, 213, 0.5); margin-bottom: 20px; text-transform: uppercase;">How to Play</h1>
+      <div class="how-to-content" style="max-width: 420px; text-align: left; line-height: 1.6; overflow-y: auto; max-height: 60vh; padding-right: 10px;">
+        <h2 style="font-size: 1.2rem; color: #5b9bd5; margin-top: 5px;">How to Jump</h2>
+        <p style="font-size: 0.95rem;">Press the <strong>Spacebar</strong>, click with your mouse, or tap the screen to make the cat jump over obstacles. You can also <strong>double jump</strong> for extra height by jumping again while in the air!</p>
+        
+        <h2 style="font-size: 1.2rem; color: #5b9bd5; margin-top: 18px;">How the Game Works</h2>
+        <p style="font-size: 0.95rem;">You control the cat through endless runner levels. You must jump over or avoid obstacles. You progress through the seasons in this order: <strong>Autumn → Winter → Spring → Summer</strong>.</p>
+        <p style="font-size: 0.95rem; margin-top: 8px;">Each season has 3 levels. Only the first available season is unlocked initially. Completing all 3 levels of a season unlocks the next season. After completing a season, you return to the homepage.</p>
+
+        <h2 style="font-size: 1.2rem; color: #5b9bd5; margin-top: 18px;">Your Goal</h2>
+        <p style="font-size: 0.95rem;">Progress through all four seasons and reach the Finish Line celebration after completing Summer!</p>
       </div>
     </div>
   </div>
