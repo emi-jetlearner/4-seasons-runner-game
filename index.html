@@ -14,6 +14,7 @@
 
     <!-- Top Left Pause Button -->
     <header class="top-header">
+      <button id="btn-home-corner" class="btn btn-icon" title="Home">🏠</button>
       <button id="btn-pause" class="btn btn-icon" title="Pause Game">
         <span>⏸</span>
       </button>
@@ -40,8 +41,9 @@
       <button id="btn-home" class="btn btn-large" style="margin-top: 10px; background: #666; border-color: #888;">Home</button>
     </div>
 
-    <!-- Home Screen Overlay -->
-    <div id="home-screen" class="overlay">
+    <!-- Home Screen Popup -->
+    <div id="home-screen" class="home-popup">
+      <button id="btn-close-popup" class="btn btn-icon home-popup-close" title="Close">✕</button>
       <h1 id="home-title">Endless season running game</h1>
       <div class="level-select">
         <button id="btn-autumn" class="btn btn-large level-btn" data-season="Autumn">Autumn</button>

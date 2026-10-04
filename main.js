@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   let isGameOver = false;
   let isPaused = false;
+  let isPopupOpen = true; // Popup starts open; gameplay frozen until a season is chosen
   const maxScore = 300;
 
   const canvas = document.getElementById('game-canvas');
@@ -55,30 +56,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  levelBtns.forEach((btn, index) => {
-    btn.addEventListener('click', () => {
-      if (index <= highestUnlockedIndex) {
-        currentSeason = btn.dataset.season;
-        homeScreen.classList.add('hidden');
-        restartGame();
-      }
-    });
+  // Bind click events manually to ensure no DOM querying issues
+  const btnAutumn = document.getElementById('btn-autumn');
+  const btnWinter = document.getElementById('btn-winter');
+  const btnSpring = document.getElementById('btn-spring');
+  const btnSummer = document.getElementById('btn-summer');
+
+  const seasonBtns = [
+    { el: btnAutumn, season: 'Autumn' },
+    { el: btnWinter, season: 'Winter' },
+    { el: btnSpring, season: 'Spring' },
+    { el: btnSummer, season: 'Summer' }
+  ];
+
+  seasonBtns.forEach((item, index) => {
+    if(item.el) {
+      item.el.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (index <= highestUnlockedIndex) {
+          currentSeason = item.season;
+          homeScreen.classList.add('hidden');
+          isPopupOpen = false; // Unfreeze gameplay
+          restartGame();
+        }
+      });
+    }
   });
 
-  btnHome.addEventListener('click', () => {
-    overlay.classList.add('hidden');
-    homeScreen.classList.remove('hidden');
+  // Home button: opens the popup
+  document.getElementById('btn-home-corner').addEventListener('click', () => {
     updateHomeButtons();
-    lastTime = performance.now();
-    requestAnimationFrame(homeLoop);
+    homeScreen.classList.remove('hidden');
+    isPopupOpen = true; // Freeze gameplay while popup is open
   });
 
+  // Close popup button (X) — resume the SAME level, do not restart
+  document.getElementById('btn-close-popup').addEventListener('click', () => {
+    if (!isGameOver) {
+      homeScreen.classList.add('hidden');
+      isPopupOpen = false; // Unfreeze gameplay, resume current level
+    }
+  });
+
+  // Overlay home button (game-over screen)
   btnHome.addEventListener('click', () => {
     overlay.classList.add('hidden');
-    homeScreen.classList.remove('hidden');
     updateHomeButtons();
-    lastTime = performance.now();
-    requestAnimationFrame(homeLoop);
+    homeScreen.classList.remove('hidden');
+    isPopupOpen = true;
   });
   // Handle Retina & High-DPI screens for super sharp silhouettes
   function resizeCanvas() {
@@ -110,25 +135,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Initial dummy background for home screen
+  // Start with Autumn running immediately behind the popup
   let bg = new AutumnParallaxBackground(canvas, displayWidth, displayHeight);
   bg.ctx = ctx;
   window.backgroundEngine = bg;
-  bg.speedMultiplier = 0.2; // slow movement on home screen
-
-  // Only start loop, wait for button click to start game
-  let lastTime = 0;
-  requestAnimationFrame(homeLoop);
-  
-  function homeLoop(time) {
-     const deltaTime = Math.min((time - lastTime) / 1000, 0.1);
-     lastTime = time;
-     if (!homeScreen.classList.contains('hidden')) {
-         bg.update(deltaTime);
-         bg.draw(ctx);
-         requestAnimationFrame(homeLoop);
-     }
-  }
 
   // Initialize Game Entities
   let player = new BlackCat(canvas, bg);
@@ -224,11 +234,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Animation Loop with delta-time calculation
   let lastTime = performance.now();
 
+  // Auto-start Autumn on page load
+  restartGame();
+
   function gameLoop(currentTime) {
     const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap at 100ms
     lastTime = currentTime;
 
-    if (!isPaused && !isGameOver) {
+    if (!isPaused && !isGameOver && !isPopupOpen) {
       if (isSpeedWarning) {
         speedWarningTimer -= deltaTime;
         if (speedWarningTimer <= 0) {
@@ -307,12 +320,10 @@ document.addEventListener('DOMContentLoaded', () => {
               
               setTimeout(() => {
                   overlay.classList.add('hidden');
-                  homeScreen.classList.remove('hidden');
                   updateHomeButtons();
+                  homeScreen.classList.remove('hidden');
                   btnRestart.style.display = 'inline-flex';
                   btnHome.style.display = 'inline-flex';
-                  lastTime = performance.now();
-                  requestAnimationFrame(homeLoop);
               }, 2000);
             }
           }
