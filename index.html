@@ -17,7 +17,6 @@
       <button id="btn-pause" class="btn btn-icon" title="Pause Game">
         <span>⏸</span>
       </button>
-      <div class="level-title">Autumn Forest Run</div>
     </header>
 
     <!-- Top Right Score Panel -->
@@ -38,6 +37,18 @@
       <h1 id="overlay-title">Level Complete!</h1>
       <p id="overlay-message">You reached 500 points.</p>
       <button id="btn-restart" class="btn btn-large">Play Again</button>
+      <button id="btn-home" class="btn btn-large" style="margin-top: 10px; background: #666; border-color: #888;">Home</button>
+    </div>
+
+    <!-- Home Screen Overlay -->
+    <div id="home-screen" class="overlay">
+      <h1 id="home-title">Endless season running game</h1>
+      <div class="level-select">
+        <button id="btn-autumn" class="btn btn-large level-btn" data-season="Autumn">Autumn</button>
+        <button id="btn-winter" class="btn btn-large level-btn locked" data-season="Winter">Winter</button>
+        <button id="btn-spring" class="btn btn-large level-btn locked" data-season="Spring">Spring</button>
+        <button id="btn-summer" class="btn btn-large level-btn locked" data-season="Summer">Summer</button>
+      </div>
     </div>
   </div>
 

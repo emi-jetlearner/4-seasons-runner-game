@@ -196,15 +196,15 @@ class BlackCat {
        }
     } else if (currentSeason === 'Summer') {
        // sunglasses
-       ctx.fillStyle = '#222'; // frame
+       ctx.fillStyle = '#667788'; // blue gray frame
        ctx.beginPath();
        ctx.rect(13, -13, 8, 5);
        ctx.rect(23, -13, 8, 5);
        ctx.fill();
-       ctx.fillStyle = '#00ffff'; // lens reflection
+       ctx.fillStyle = '#99bbee'; // sky grey lenses
        ctx.fillRect(14, -12, 6, 3);
        ctx.fillRect(24, -12, 6, 3);
-       ctx.strokeStyle = '#222';
+       ctx.strokeStyle = '#667788';
        ctx.lineWidth = 1.5;
        ctx.beginPath();
        ctx.moveTo(9, -11); // ear piece

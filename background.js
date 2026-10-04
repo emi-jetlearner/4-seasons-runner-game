@@ -961,9 +961,10 @@ class SpringParallaxBackground {
       ctx.lineTo(x + 1.5, hillY - height); ctx.lineTo(x + 4, hillY); ctx.fill();
       ctx.fillStyle = 'rgba(255, 183, 197, 0.9)';
       ctx.beginPath();
-      ctx.arc(x, hillY - height, 35, 0, Math.PI * 2);
-      ctx.arc(x - 20, hillY - height + 10, 25, 0, Math.PI * 2);
-      ctx.arc(x + 20, hillY - height + 10, 25, 0, Math.PI * 2);
+      ctx.arc(x, hillY - height, 45, 0, Math.PI * 2);
+      ctx.arc(x - 25, hillY - height + 15, 35, 0, Math.PI * 2);
+      ctx.arc(x + 25, hillY - height + 15, 35, 0, Math.PI * 2);
+      ctx.arc(x, hillY - height - 20, 30, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#4a3b32';
     }
@@ -1132,16 +1133,6 @@ class SummerParallaxBackground {
         ctx.lineTo(px, py);
     }
     ctx.lineTo(w, h); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#ff9999';
-    for(let i = 0; i < 5; i++) {
-        let x = (i/5)*w + 50;
-        let y = groundY + 20 + ((i*17)%20);
-        ctx.beginPath();
-        for(let j=0; j<5; j++) {
-            ctx.ellipse(x, y, 4, 8, j * (Math.PI*2/5), 0, Math.PI*2);
-        }
-        ctx.fill();
-    }
   }
   update(deltaTime) {
     if (this.isPaused) return;

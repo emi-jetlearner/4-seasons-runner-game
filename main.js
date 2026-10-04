@@ -4,17 +4,12 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-  const canvas = document.getElementById('game-canvas');
-  const btnPause = document.getElementById('btn-pause');
-  const scoreDisplay = document.getElementById('current-score');
-  const highScoreDisplay = document.getElementById('high-score');
-  
-  const overlay = document.getElementById('game-overlay');
-  const overlayTitle = document.getElementById('overlay-title');
-  const overlayMessage = document.getElementById('overlay-message');
-  const btnRestart = document.getElementById('btn-restart');
+  window.onerror = function(msg, url, lineNo, columnNo, error) {
+    alert("Error: " + msg + "\nLine: " + lineNo);
+    return false;
+  };
 
-  // Game State
+  // Game State (declared at top to avoid any scoping issues)
   let score = 0;
   let highScore = localStorage.getItem('autumnHighScore') || 0;
   let gameTime = 0;
@@ -24,13 +19,67 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentLevel = 1;
   let speedWarningTimer = 0;
   let isSpeedWarning = false;
-  let currentSeason = 'Summer';
-  highScoreDisplay.textContent = highScore;
+  let currentSeason = 'Autumn'; // Default
+  
+  const seasonsOrder = ['Autumn', 'Winter', 'Spring', 'Summer'];
+  let highestUnlockedIndex = 0;
+  let isVictoryMode = false;
+  let fireworks = [];
   
   let isGameOver = false;
   let isPaused = false;
   const maxScore = 300;
 
+  const canvas = document.getElementById('game-canvas');
+  const btnPause = document.getElementById('btn-pause');
+  const scoreDisplay = document.getElementById('current-score');
+  const highScoreDisplay = document.getElementById('high-score');
+  
+  highScoreDisplay.textContent = highScore;
+
+  const overlay = document.getElementById('game-overlay');
+  const overlayTitle = document.getElementById('overlay-title');
+  const overlayMessage = document.getElementById('overlay-message');
+  const btnRestart = document.getElementById('btn-restart');
+  const btnHome = document.getElementById('btn-home');
+  const homeScreen = document.getElementById('home-screen');
+  const levelBtns = document.querySelectorAll('.level-btn');
+
+  function updateHomeButtons() {
+    levelBtns.forEach((btn, index) => {
+      if (index <= highestUnlockedIndex) {
+        btn.classList.remove('locked');
+      } else {
+        btn.classList.add('locked');
+      }
+    });
+  }
+
+  levelBtns.forEach((btn, index) => {
+    btn.addEventListener('click', () => {
+      if (index <= highestUnlockedIndex) {
+        currentSeason = btn.dataset.season;
+        homeScreen.classList.add('hidden');
+        restartGame();
+      }
+    });
+  });
+
+  btnHome.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
+    updateHomeButtons();
+    lastTime = performance.now();
+    requestAnimationFrame(homeLoop);
+  });
+
+  btnHome.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    homeScreen.classList.remove('hidden');
+    updateHomeButtons();
+    lastTime = performance.now();
+    requestAnimationFrame(homeLoop);
+  });
   // Handle Retina & High-DPI screens for super sharp silhouettes
   function resizeCanvas() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -61,10 +110,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // Initialize Background Engine to Summer for first 3 levels
-  let bg = new SummerParallaxBackground(canvas, displayWidth, displayHeight);
+  // Initial dummy background for home screen
+  let bg = new AutumnParallaxBackground(canvas, displayWidth, displayHeight);
   bg.ctx = ctx;
   window.backgroundEngine = bg;
+  bg.speedMultiplier = 0.2; // slow movement on home screen
+
+  // Only start loop, wait for button click to start game
+  let lastTime = 0;
+  requestAnimationFrame(homeLoop);
+  
+  function homeLoop(time) {
+     const deltaTime = Math.min((time - lastTime) / 1000, 0.1);
+     lastTime = time;
+     if (!homeScreen.classList.contains('hidden')) {
+         bg.update(deltaTime);
+         bg.draw(ctx);
+         requestAnimationFrame(homeLoop);
+     }
+  }
 
   // Initialize Game Entities
   let player = new BlackCat(canvas, bg);
@@ -110,12 +174,16 @@ document.addEventListener('DOMContentLoaded', () => {
     currentLevel = 1;
     speedWarningTimer = 0;
     isSpeedWarning = false;
-    currentSeason = 'Summer';
     scoreDisplay.textContent = score;
     isGameOver = false;
     isPaused = false;
+    isVictoryMode = false;
     
-    bg = new SummerParallaxBackground(canvas, displayWidth, displayHeight);
+    if (currentSeason === 'Autumn') bg = new AutumnParallaxBackground(canvas, displayWidth, displayHeight);
+    else if (currentSeason === 'Winter') bg = new WinterParallaxBackground(canvas, displayWidth, displayHeight);
+    else if (currentSeason === 'Spring') bg = new SpringParallaxBackground(canvas, displayWidth, displayHeight);
+    else if (currentSeason === 'Summer') bg = new SummerParallaxBackground(canvas, displayWidth, displayHeight);
+    
     bg.ctx = ctx;
     window.backgroundEngine = bg;
     
@@ -126,6 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
     player = new BlackCat(canvas, bg);
     obstacles = new ObstacleManager(canvas, bg);
     collectibles = new CollectibleManager(canvas, bg);
+    
+    // Start game loop
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
   }
 
   function gameOver(win) {
@@ -211,64 +283,37 @@ document.addEventListener('DOMContentLoaded', () => {
           scoreDisplay.textContent = score;
           
           if (score >= maxScore) {
-            if (currentSeason === 'Summer') {
-              // Transition to Autumn
-              currentSeason = 'Autumn';
-              score = 0;
-              currentLevel = 1;
-              timeSinceLastScore = 0;
-              scoreDisplay.textContent = score;
-              
-              bg = new AutumnParallaxBackground(canvas, displayWidth, displayHeight);
+            isGameOver = true;
+            scoreDisplay.textContent = maxScore;
+            
+            let currentIndex = seasonsOrder.indexOf(currentSeason);
+            
+            if (currentIndex === 3) {
+              // Smoothly transition to beach setting with fireworks
+              bg = new SummerParallaxBackground(canvas, displayWidth, displayHeight);
               bg.ctx = ctx;
-              window.backgroundEngine = bg;
-              player.bg = bg;
-              obstacles.bg = bg;
-              collectibles.bg = bg;
-              
-              hasShownWarning = false; // Reset for Autumn
-              window.warningTextOverride = "Autumn has arrived!";
-              level3WarningTimer = 3; // Show arrival warning
-            } else if (currentSeason === 'Autumn') {
-              // Transition to Winter
-              currentSeason = 'Winter';
-              score = 0;
-              currentLevel = 1;
-              timeSinceLastScore = 0;
-              scoreDisplay.textContent = score;
-              
-              bg = new WinterParallaxBackground(canvas, displayWidth, displayHeight);
-              bg.ctx = ctx;
-              window.backgroundEngine = bg;
-              player.bg = bg;
-              obstacles.bg = bg;
-              collectibles.bg = bg;
-              
-              hasShownWarning = false; // Reset for Winter
-              window.warningTextOverride = "Winter has arrived!";
-              level3WarningTimer = 3; // Show arrival warning
-            } else if (currentSeason === 'Winter') {
-              // Transition to Spring
-              currentSeason = 'Spring';
-              score = 0;
-              currentLevel = 1;
-              timeSinceLastScore = 0;
-              scoreDisplay.textContent = score;
-              
-              bg = new SpringParallaxBackground(canvas, displayWidth, displayHeight);
-              bg.ctx = ctx;
-              window.backgroundEngine = bg;
-              player.bg = bg;
-              obstacles.bg = bg;
-              collectibles.bg = bg;
-              
-              hasShownWarning = false; // Reset for Spring
-              window.warningTextOverride = "Spring has arrived!";
-              level3WarningTimer = 3; // Show arrival warning
+              bg.speedMultiplier = 0.5;
+              isVictoryMode = true;
+              btnPause.innerHTML = '';
             } else {
-              score = maxScore;
-              scoreDisplay.textContent = score;
-              gameOver(true);
+              if (highestUnlockedIndex < currentIndex + 1) {
+                  highestUnlockedIndex = currentIndex + 1;
+              }
+              overlayTitle.textContent = "Level Complete!";
+              overlayMessage.textContent = "Unlocking next season...";
+              overlay.classList.remove('hidden');
+              btnRestart.style.display = 'none';
+              btnHome.style.display = 'none';
+              
+              setTimeout(() => {
+                  overlay.classList.add('hidden');
+                  homeScreen.classList.remove('hidden');
+                  updateHomeButtons();
+                  btnRestart.style.display = 'inline-flex';
+                  btnHome.style.display = 'inline-flex';
+                  lastTime = performance.now();
+                  requestAnimationFrame(homeLoop);
+              }, 2000);
             }
           }
         }
@@ -315,5 +360,5 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(gameLoop);
   }
 
-  requestAnimationFrame(gameLoop);
+  // Loop starts when 'Play' is clicked (via restartGame)
 });
